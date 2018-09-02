@@ -61,14 +61,123 @@ Settings = {
 					options: {min: 5, max: 120, step: 5},
 					description: 'The amount of time the application will wait betweeen checking for updates.'
 				},
-				autoStartup: {
-					title: 'Launch Application when Windows starts.',
-					type: 'checkbox',
-					options: null,
-					description: "If this application should autostart with windows or not."
-				},
+				// autoStartup: {
+				// 	title: 'Launch Application when Windows starts.',
+				// 	type: 'checkbox',
+				// 	options: null,
+				// 	description: "If this application should autostart with windows or not."
+				// },
 			}
 		},
+	}
+};
+
+var generateSettings = function(e) {
+	var container = document.querySelector('.column-options .accordion');
+	var create = {
+		category: function(category, id, target) {
+			target = target || container;
+			let element = document.createElement('div');
+					element.id = id;
+					element.className = 'accordion-item ' + category.title;
+					element.innerHTML = `
+						<div class="accordion-header clickable">
+							<div class="accordion-title left">
+								<i class="icon"></i>
+								<span>`+ category.title +`</span>
+							</div>
+							<div class="accordion-current"></div>
+							<i class="flaticon-menu57"></i>
+						</div>
+						<div class="accordion-panel" style="display: none;"></div>
+					`;
+					// element.innerHTML = '<h2>'+ category.title +'</h2>';
+			// Loop through ctegory and generate elements.
+			for(let key in category.options) {
+				if (category.options.hasOwnProperty(key)) {
+					let setting = category.options[key];
+					create[setting.type](setting, key, element.querySelector('.accordion-panel'));
+				}
+			}
+			target.append(element);
+		},
+		dropdown: function(setting, id, target) {
+			target = target || container;
+			let element = document.createElement('div');
+					element.className = 'accordion-panel-item dropdown';
+			let currentValue = Settings[id];
+			let options = '';
+			for(let i=0; i < setting.options.length; i++) {
+				let option = setting.options[i];
+				let selected = option === currentValue ? 'selected':'';
+				options += '<option value="'+ option +'"'+ selected +'>'+ option.capitalizeFirstLetter() +'</option>';
+			}
+
+			element.innerHTML = `
+				<label class="settings-title" title="`+ setting.description +`">`+ setting.title +`</label>
+				<select id="`+ id +`">`+ options +`</select>
+			`;
+			target.append(element);
+		},
+		checkbox: function(setting, id, target) {
+			target = target || container;
+			let element = document.createElement('div');
+					element.className = 'accordion-panel-item checkbox';
+			let currentValue = Settings[id] ? 'checked':'';
+
+			element.innerHTML = `
+				<label class="settings-title" title="`+ setting.description +`"><input type="checkbox" id="`+ id +`" `+ currentValue +`/>`+ setting.title +`</label>
+			`;
+			target.append(element);
+		},
+		slider: function(setting, id, target) {
+			target = target || container;
+			let element = document.createElement('div');
+					element.className = 'accordion-panel-item slider';
+			let currentValue = Settings[id];
+
+			element.innerHTML = `
+				<label class="settings-title" title="`+ setting.description +`">`+ setting.title +`</label>
+				<div class="slider-value">
+					<div class="min">`+ setting.options.min +`</div>
+					<div class="current">`+ currentValue +`</div>
+					<div class="max">`+ setting.options.max +`</div>
+				</div>
+				<div class="slider" id="`+ id +`"></div>
+			`;
+
+			$(element).find('.slider').slider({
+				min: setting.options.min,
+				max: setting.options.max,
+				step: setting.options.step,
+				value: currentValue,
+				start: function(e, ui) {
+					var target = $(e.target);
+					target
+						.siblings('.slider-value')
+						.find('.current')
+						.text(ui.value);
+				},
+				slide: function(e, ui) {
+					$(e.target)
+						.siblings('.slider-value')
+						.find('.current')
+						.text(ui.value);
+				},
+				stop: function(e, ui) {
+					accordionMenu.updateSettings.call(this, e, {id:this.id , value: ui.value});
+				},
+			});
+			target.append(element);
+		},
+	};
+
+	// Loop through manifest and generate elements.
+	for(let key in Settings.manifest) {
+		if (Settings.manifest.hasOwnProperty(key)) {
+			let setting = Settings.manifest[key];
+			create[setting.type](setting, key);
+		}
 	}
 };
 
@@ -82,9 +191,101 @@ function onLaunch() {
 	Settings.update(function() {
 		buildReleaseList();	// Build release list
 		updateChecker();	// Check for updates
-		// General.settingsGenerate();
+		generateSettings();
 	});
 }
+
+var accordionMenu = {
+	toggleMenu: function(e) {
+		var _this = this;
+		// var parent = $(this).closest('.column-panel');
+		// var active = parent.find('.reader-content.active')[0] || parent.find('.reader-content:first-of-type')[0] || parent[0];
+		var column = $('.column-options');
+		var panel = $('.accordion-panel:visible');
+		var accordion = $('.accordion-item.open');
+		// var button = $('.column-options-link');
+
+		if (!$(column).is(':animated')) {
+			if (panel.length !== 0) {
+				$(panel).hide(); // Hide visible accordion panels, could also have toggled the 'open' class
+			}
+
+			// Remove the added height by accordion
+			// Toggle class for the actual options menu & parent
+			$(column)
+				.height('')
+				.toggleClass('open', {
+					easing: 'easeOutQuad',
+					duration: 1,
+				})
+				.parent()
+				.toggleClass('open');
+
+			$(accordion).toggleClass('open', 1); // Toggle class for the accordion panels
+			// $(button).toggleClass('open'); // Toggle class for options button
+
+			// Workaround since we only have 1 option at this time.
+			setTimeout(function() {
+				if(column[0].classList.contains('open')) accordionMenu.toggleChild.call(column.find('.accordion-header'));
+			}, 15);
+		}
+
+		// Listener for clicking outside of options menu
+		if (!column.hasClass('open')) {
+			$(document).on('click.closeOptions', function(e) {
+				if ($(e.target).closest('.accordion').length === 0) {
+					if (column.hasClass('open')) {
+						accordionMenu.toggleMenu.call(_this);
+					}
+				}
+			});
+		} else {
+			$(document).off('click.closeOptions');
+		}
+	},
+	toggleChild: function() {
+		var form = $(this).closest('form'); // The parent 'form' to be able to read height from.
+		var colOptions = $(this).closest('.column-options'); // The parent 'column' to be able to assign height to.
+		var accPanel = $(this).siblings('.accordion-panel'); // The sibling 'accordion-panel' to be able to expand the accordion with options.
+		var accSiblingPanels = $(this)
+			.parent()
+			.siblings('.accordion-item')
+			.children('.accordion-panel'); // The children 'accordion-panels' of the sibling 'accordion-item' to be un-expanded.
+		var accItem = $(this).closest('.accordion-item'); // The parent 'accordion-item' to toggle class of current item.
+
+		if (!$(accPanel).is(':animated') && !$(accSiblingPanels).is(':animated')) {
+			$(accSiblingPanels)
+				.slideUp({ easing: 'easeOutQuad', duration: 150 })
+				.closest('.accordion-item.open')
+				.removeClass('open', 150); // Remove class from sibling items
+			$(accItem).toggleClass('open', 150); // Toggle class of current item
+			$(accPanel).slideToggle({
+				easing: 'easeOutQuad',
+				duration: 150,
+				progress: function() {
+					// Set the current height and offset to 'column' & 'column-scroller'
+					// * Panels of the same height being expanded and contracted causes some minor issues in the smoothness of the animation.
+					var newHeight = $(form).height();
+					$(colOptions).height(newHeight);
+				},
+			});
+		}
+	},
+	updateSettings: function(e, object, callback) {
+		object = object || {};
+		var panel = $('.column-options .accordion');
+		var id = object.id || this.id;
+		var value = object.value || (this.checked === true || this.checked === false  ? this.checked : this.value);	// If checked exists, assume it is a checkbox, else assume it is a dropdown.
+		var parent = panel.find('#'+id).closest('.accordion-item');
+		var path = [];
+		let count = 0;
+		while(parent.length > 0) {
+			path.unshift(parent[0].id);
+			parent = parent.parent().closest('.accordion-item');
+		}
+		Settings.update({[id]:value, path:path}, callback);
+	}
+};
 
 var attachListeners = function() {
 	// Version URls
@@ -96,6 +297,21 @@ var attachListeners = function() {
 		var data = $(this).attr('data-src');
 		nwOpen(data);
 	});
+
+	// Settings menu
+	$('.app-container')
+	.off('click.columnToggle')
+	.on('click.columnToggle', '.app-header .settings button', accordionMenu.toggleMenu);
+
+	$('.app-container')
+	.off('click.optionsAccordion')
+	.on('click.optionsAccordion', '.accordion-header', accordionMenu.toggleChild);
+
+	// Settings Listener
+		$('.app-wrapper .column-options .accordion')
+		.off('change')
+		.on('change', 'input, select', accordionMenu.updateSettings);
+	
 
 	// Refresh Button
 	$('.app-container')
@@ -184,7 +400,7 @@ function resetWindowSize() {
 }
 
 function updateChecker(wait) {
-	// if (!Settings.automaticUpdates) return;
+	if (!Settings.automaticUpdates) return;
 	chrome.storage.local.get(function(localStorage) {
 		var timeout,
 			lastUpdate = localStorage.lastUpdate || 0,
