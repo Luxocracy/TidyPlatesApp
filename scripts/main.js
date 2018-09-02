@@ -87,7 +87,7 @@ var generateSettings = function(e) {
 								<span>`+ category.title +`</span>
 							</div>
 							<div class="accordion-current"></div>
-							<i class="flaticon-menu57"></i>
+							<i class=""></i>
 						</div>
 						<div class="accordion-panel" style="display: none;"></div>
 					`;

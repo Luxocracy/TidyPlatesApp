@@ -209,6 +209,8 @@ fieldset {
     color: white;
     padding: 6px 0;
     border-bottom: 1px solid #323746;
+    margin-left: 1em;
+    margin-right: 1em;
     -webkit-margin-after: 0.5em;
 }
 
