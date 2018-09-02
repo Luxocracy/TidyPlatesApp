@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="libs/jquery-3.3.1.min.js"></script>
+		<script src="libs/jquery-ui/jquery-ui.min.js"></script>
+		<script src="libs/jszip.min.js"></script>
+		<script src="libs/zip-js/zip.js"></script>
+		<script src="scripts/main.js"></script>
+		<!-- Load after main.js -->
+		<script src="scripts/database.js"></script>
+		<link rel="stylesheet" href="libs/jquery-ui/css/jquery-ui.min.css">
+		<link rel="stylesheet" href="libs/jquery-ui/css/jquery-ui.structure.min.css">
+		<link rel="stylesheet" href="libs/jquery-ui/css/jquery-ui.theme.min.css">
+		<link rel="stylesheet" href="assets/css/all.css">
+		<link rel="stylesheet" href="assets/css/main.css">
+	</head>
+	<body>
+		<div class="app-wrapper">
+			<div class="app-container">
+				<header class="app-header">
+					<div class="left">
+						<h1 class="header">
+							<span class="title">TidyPlatesContinued</span>
+						</h1>
+					</div>
+					<div class="right">
+						<div class="refresh">
+							<button><i class="fas fa-sync"></i>Check for Update</button>
+						</div>
+					</div>
+				</header>
+				<div class="container-wrapper">
+					<div class="content">
+						<div class="content-wrapper">
+							<table class="releases">
+								<thead>
+									<tr>
+										<th>Version</th>
+										<th>Date</th>
+										<th>Description</th>
+										<th></th>
+									</tr>
+								</thead>
+							<tbody></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

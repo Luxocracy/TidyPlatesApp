@@ -1,0 +1,230 @@
+body {
+    background: #19191F;
+    font-family: roboto,helvetica neue,Helvetica,Arial,sans-serif;
+    color: #51586a;
+    font-weight: 300;
+    letter-spacing: 0;
+}
+
+.clickable {
+    cursor: pointer !important;
+}
+
+.disabled {
+    cursor: default !important;
+}
+
+.ellipsis {
+    max-width: 100%;
+    vertical-align: middle;
+    overflow: hidden;
+    white-space: nowrap;
+    word-wrap: normal;
+    -ms-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+}
+
+.spin {
+    animation: spin linear 1.5s infinite;
+}
+
+.float {
+    animation: float 1.5s linear infinite;
+}
+
+.app-wrapper {
+    background: #252830;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    border-left: 2px solid #19191f;
+    border-right: 2px solid #19191f;
+    border-bottom: 2px solid #19191f;
+}
+
+.app-container {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    position: absolute;
+    background-color: inherit;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+    position: relative;
+    height: 50px;
+    padding: 8px 8px 0 8px;
+    color: #444;
+    background-color: #202029;
+    flex-grow: 0;
+    flex-shrink: 0;
+    border-bottom: #323746 1px solid;
+}
+
+.app-header .header {
+    display: flex;
+    margin: 0px;
+    font-size: 22px;
+    font-weight: normal;
+    line-height: 36px;
+    height: 40px;
+}
+
+.app-header .header .title {
+    max-width: 90%;
+    color: #fff;
+}
+
+.container-wrapper {
+    width: 100%;
+    overflow-y: scroll;
+}
+
+.content-wrapper {
+    background: #252830;
+    border-bottom-left-radius: .25em;
+    border-bottom-right-radius: .25em;
+    border: #323746 1px solid;
+    border-top: none;
+}
+
+.nav-options li,
+.releases tbody tr {
+    transition: all .05s ease;
+}
+
+.releases {
+    width: 100%;
+    max-width: 100%;
+    background-color: transparent;
+    border-collapse: collapse;
+}
+
+.releases th {
+    text-align: left;
+    font-size: 1em;
+    font-weight: 500;
+    color: #fff;
+}
+
+.releases th, .releases td {
+    height: 100%;
+    padding: .75rem;
+    vertical-align: top;
+    border-top: 1px solid #323746;
+    color: #cfd2da;
+}
+
+.releases tbody tr:hover {
+    background: #21212b;
+    border-radius: .25em;
+}
+
+.releases .version a {
+    color: #1997c6;
+    text-decoration: none;
+}
+
+.releases .version a:hover {
+    color: #1965c6;
+}
+
+.releases .date span {
+    display: block;
+}
+
+.releases .date .date {
+    font-size: 0.9em;
+}
+
+.releases .date .time {
+    font-size: 0.7em;
+    color: #7d7d7d;
+}
+
+button {
+    display: block;
+    cursor: pointer;
+    padding: .5em 1em;
+    margin-left: 0;
+    margin-top: .1em; 
+    margin-bottom: .1em; 
+    border-radius: .1em;
+    background: #2196f3;
+    color: #fff;
+    border: 1px solid rgba(0,0,0,.05);
+    box-shadow: 0 0 5px rgba(0,0,0,.05);
+    transition: all .1s ease;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+button:hover {
+    background-color: #1e88e5;
+}
+
+button:active,
+button.active,
+.active button {
+    background: #f58500;
+    top: 2px;
+}
+
+button i {
+    margin-right: 0.4em;
+    margin-left: -0.3em;
+}
+
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+    background-color: #212130;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 0px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: #21212b;
+    height: 130px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 0px;
+    background-color: #252830;
+    width: 130px;
+    border-top: 0px;
+}
+
+/* Animations */
+
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+@keyframes float {
+    0% {
+        -webkit-transform: translateY(0);
+        transform: translateY(0)
+    }
+
+    50% {
+        -webkit-transform: translateY(-6px);
+        transform: translateY(-3px)
+    }
+
+    100% {
+        -webkit-transform: translateY(0);
+        transform: translateY(0)
+    }
+}
