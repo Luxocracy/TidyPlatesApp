@@ -36,8 +36,9 @@ Settings = {
 					manifest: Settings.manifest, // Manifest of the various settings.
 					update: Settings.update, // This update function
 					autoStartup: localStorage.settings.autoStartup || false,
-					automaticUpdates: localStorage.settings.automaticUpdates || false,
-					updateWaitTime: localStorage.settings.updateWaitTime || 60,	// In
+					automaticUpdates: localStorage.settings.automaticUpdates || true,
+					updateWaitTime: localStorage.settings.updateWaitTime || 60,	// In minutes
+					addonsFolder: localStorage.settings.addonsFolder || "",
 				};
 			}
 
@@ -60,6 +61,12 @@ Settings = {
 					type: 'slider',
 					options: {min: 5, max: 120, step: 5},
 					description: 'The amount of time the application will wait betweeen checking for updates.'
+				},
+				addonsFolder: {
+					title: 'Addons Folder Path',
+					type: 'folder',
+					options: null,
+					description: "Path to your Addons Folder."
 				},
 				// autoStartup: {
 				// 	title: 'Launch Application when Windows starts.',
@@ -170,6 +177,17 @@ var generateSettings = function(e) {
 			});
 			target.append(element);
 		},
+		folder: function(setting, id, target) {
+			target = target || container;
+			let element = document.createElement('div');
+					element.className = 'accordion-panel-item folder';
+			let currentValue = Settings[id];
+
+			element.innerHTML = `
+				<label for="`+ id +`" class="settings-title button" title="`+ setting.description +`">`+ setting.title +`<br><input type="file" nwdirectory id="`+ id +`" style="display:none;"/></label>
+			`;
+			target.append(element);
+		},
 	};
 
 	// Loop through manifest and generate elements.
@@ -205,6 +223,19 @@ var accordionMenu = {
 		var accordion = $('.accordion-item.open');
 		// var button = $('.column-options-link');
 
+		// Listener for clicking outside of options menu
+		if (!column.hasClass('open')) {
+			$(document).on('click.closeOptions', function(e) {
+				if ($(e.target).closest('.accordion').length === 0 && $(e.target).closest('.settings').length === 0) {
+					if (column.hasClass('open')) {
+						accordionMenu.toggleMenu.call(_this);
+					}
+				}
+			});
+		} else {
+			$(document).off('click.closeOptions');
+		}
+
 		if (!$(column).is(':animated')) {
 			if (panel.length !== 0) {
 				$(panel).hide(); // Hide visible accordion panels, could also have toggled the 'open' class
@@ -228,19 +259,6 @@ var accordionMenu = {
 			setTimeout(function() {
 				if(column[0].classList.contains('open')) accordionMenu.toggleChild.call(column.find('.accordion-header'));
 			}, 15);
-		}
-
-		// Listener for clicking outside of options menu
-		if (!column.hasClass('open')) {
-			$(document).on('click.closeOptions', function(e) {
-				if ($(e.target).closest('.accordion').length === 0) {
-					if (column.hasClass('open')) {
-						accordionMenu.toggleMenu.call(_this);
-					}
-				}
-			});
-		} else {
-			$(document).off('click.closeOptions');
 		}
 	},
 	toggleChild: function() {
@@ -275,7 +293,7 @@ var accordionMenu = {
 		object = object || {};
 		var panel = $('.column-options .accordion');
 		var id = object.id || this.id;
-		var value = object.value || (this.checked === true || this.checked === false  ? this.checked : this.value);	// If checked exists, assume it is a checkbox, else assume it is a dropdown.
+		var value = object.value || (this.type === "checkbox" ? this.checked:this.value);
 		var parent = panel.find('#'+id).closest('.accordion-item');
 		var path = [];
 		let count = 0;
@@ -308,9 +326,9 @@ var attachListeners = function() {
 	.on('click.optionsAccordion', '.accordion-header', accordionMenu.toggleChild);
 
 	// Settings Listener
-		$('.app-wrapper .column-options .accordion')
-		.off('change')
-		.on('change', 'input, select', accordionMenu.updateSettings);
+	$('.app-wrapper .column-options .accordion')
+	.off('change')
+	.on('change', 'input, select', accordionMenu.updateSettings);
 	
 
 	// Refresh Button
@@ -514,6 +532,7 @@ function xhrRequest(url, type) {
 // xhrRequest("https://api.github.com/repos/Luxocracy/TidyPlatesContinued/releases", "json");
 
 var FileHandler = {
+	fs: require("fs"),
 	read: {
 		meta: function(file) {
 			return new Promise(function(resolve, reject) {
@@ -536,91 +555,126 @@ var FileHandler = {
 			});
 		},
 	},
-	write: function(blob, filename, storedDir) {
+	// write: function(blob, filename, storedDir) {
+	// 	return new Promise(function(resolve, reject) {
+	// 		var processFile = function(entry) {
+	// 			entry.getFile(filename, { create: true }, function(entry) {
+	// 				entry.createWriter(function(fileWriter) {
+	// 				  var truncated = false;
+
+	// 				  fileWriter.onwriteend = function(e) {
+	// 				    if (!truncated) {
+	// 				      truncated = true;
+	// 				      // You need to explicitly set the file size to truncate
+	// 				      // any content that might have been there before
+	// 				      this.truncate(blob.size);
+	// 				      return;
+	// 				    }
+	// 				    // console.log('Succesfully wrote file.');
+	// 				    resolve(entry.filename);
+	// 				  };
+
+	// 				  fileWriter.onerror = function(e) {
+	// 				   	console.error('Failed in writing file.');
+	// 				  };
+
+	// 				  fileWriter.write(blob);
+	// 				});
+	// 			}, function(error) {
+	// 				console.error(error);
+	// 			});
+	// 		};
+
+	// 		var processDir = function(entry) {
+	// 			entry.getDirectory(filename, { create: true }, function(entry) {
+	// 				// console.log('Succesfully Created Directory.');
+	// 				resolve(entry.filename);
+	// 			}, function(error) {
+	// 				console.error(error);
+	// 			});
+	// 		};
+
+	// 		chrome.fileSystem.getWritableEntry(storedDir, function(entry) {
+	// 			if(!blob.size || blob.size === 0) {
+	// 				processDir(entry);
+	// 			} else {
+	// 				processFile(entry);
+	// 			}
+	// 		});
+	// 	});
+
+	// },
+	write: function(blob, filename, isDir, addonFolder) {
 		return new Promise(function(resolve, reject) {
-			var processFile = function(entry) {
-				entry.getFile(filename, { create: true }, function(entry) {
-					entry.createWriter(function(fileWriter) {
-					  var truncated = false;
+			var fs = FileHandler.fs;
+			var fileReader = new FileReader();
 
-					  fileWriter.onwriteend = function(e) {
-					    if (!truncated) {
-					      truncated = true;
-					      // You need to explicitly set the file size to truncate
-					      // any content that might have been there before
-					      this.truncate(blob.size);
-					      return;
-					    }
-					    // console.log('Succesfully wrote file.');
-					    resolve(entry.filename);
-					  };
-
-					  fileWriter.onerror = function(e) {
-					   	console.error('Failed in writing file.');
-					  };
-
-					  fileWriter.write(blob);
-					});
-				}, function(error) {
-					console.error(error);
-				});
-			};
-
-			var processDir = function(entry) {
-				entry.getDirectory(filename, { create: true }, function(entry) {
-					// console.log('Succesfully Created Directory.');
-					resolve(entry.filename);
-				}, function(error) {
-					console.error(error);
-				});
-			};
-
-			chrome.fileSystem.getWritableEntry(storedDir, function(entry) {
-				if(!blob.size || blob.size === 0) {
-					processDir(entry);
+			fileReader.onload = function() {
+				if(isDir) {
+					// Try to create dir
+					try {
+						fs.mkdirSync(addonFolder+filename);
+					} catch(err) {
+						console.error(err);
+					}
 				} else {
-					processFile(entry);
+					fs.writeFileSync(addonFolder+filename, Buffer.from(new Uint8Array(this.result)));
 				}
-			});
-		});
 
+				resolve(filename);
+			};
+
+			fileReader.readAsArrayBuffer(blob);
+		});
+	},
+	remove: function(folders, addonFolder) {
+		return new Promise(function(resolve, reject) {
+			var fs = require("fs");
+			var path = require("path");
+
+			var rmdir = function(dir) {
+				var list = fs.readdirSync(dir);
+				for(var i = 0; i < list.length; i++) {
+					var filename = path.join(dir, list[i]);
+					var stat = fs.statSync(filename);
+					
+					if(filename == "." || filename == "..") {
+						// pass these files
+					} else if(stat.isDirectory()) {
+						// rmdir recursively
+						rmdir(filename);
+					} else {
+						// rm fiilename
+						fs.unlinkSync(filename);
+					}
+				}
+				fs.rmdirSync(dir);
+			};
+
+			for(let i=0; i < folders.length; i++) {
+				try {
+					rmdir(path.join(addonFolder, folders[i]));
+				} catch(err) {
+					// Do nothing
+				}
+			}
+			resolve();
+		});
 	},
 };
 
-var WTFFolder = function(newLocation) {
+var AddonsFolder = function(newLocation) {
 	return new Promise(function(resolve, reject) {
-		chrome.storage.local.get(function(localStorage) {
-			if (!localStorage.WTFFolder) localStorage.WTFFolder = 'none'; // Because 'isRestorable' throws an error if this is 'undefined'
-			chrome.fileSystem.isRestorable(localStorage.WTFFolder, function(dirIsRestorable) {
-				if (dirIsRestorable && !newLocation) {
-					chrome.fileSystem.restoreEntry(localStorage.WTFFolder, function(dir) {
-						// Verify the dirctory exists
-						if(dir) {
-							resolve(dir);
-						} else {
-							WTFFolder(true).then(resolve); // Set a new directory if it doesn't exist.
-						}
-					});
-				} else if (newLocation !== false) {
-					chrome.fileSystem.chooseEntry({
-							type: 'openDirectory',
-						},
-						function(dir) {
-							if (chrome.runtime.lastError) {
-								console.warn('Something went wrong while choosingEntry:', chrome.runtime.lastError.message);
-								return;
-							}
-							var storedDir = chrome.fileSystem.retainEntry(dir);
-							chrome.storage.local.set({ WTFFolder: storedDir });
-
-							resolve(dir);
-						}
-					);
-				} else {
-					reject(false);
-				}
+		if(Settings.addonsFolder && Settings.addonsFolder !== "") {
+			resolve(Settings.addonsFolder+'\\');
+		} else {
+			$('#addonsFolder')
+			.off('change')
+			.on('change', function() {
+				resolve(Settings.addonsFolder+'\\');
 			});
-		});
+			document.querySelector("#addonsFolder").click();
+		}
 	});
 };
 
@@ -653,48 +707,60 @@ var extractRelease = function(release) {
 			return dirs;
 		};
 
+		var writeFiles = function(files, storedDir) {
+			// Function that filters any unwanted files. In this case, filter anything that isn't a folder.
+			let isAllowed = function(filename) {
+				let dirs = getDirs(files);
+				let regexString = "";
+				let allowedFiles;
+
+				for(let i=0; i < dirs.length; i++) {
+					regexString += dirs[i] + '\/|';
+				}
+				allowedFiles = new RegExp(regexString.slice(0, -1), 'i');
+
+				return filename.match(allowedFiles);
+			};
+
+			return new Promise(function(resolve, reject) {
+				let manifest = [];
+				for(let i=0; i < files.length; i++) {
+					let entry = files[i];
+					if(isAllowed(entry.filename)) {
+						let filename = entry.filename.replace(/[^\/]*?\//i, "");
+						manifest.push(filename);
+						// Get file Blob and write it.
+						FileHandler.read.data(entry).then(function(blob) {
+							FileHandler.write(blob, filename, entry.directory, storedDir).then(function(name) {
+								manifest.splice(manifest.indexOf(name), 1);	// Remove file from manifest
+								if(manifest.length == 0) {
+									resolve();	// If we have no more files left to write, resolve
+								}
+							});
+						});
+					}
+				}
+			});
+		};
+
 		if(!release) return;
 
 		// Download the release from the given URL
 		xhrRequest(release.zipball_url, "blob").then(function(blob) {
 			// Read the metadata/filelist of the zip file.
 			FileHandler.read.meta(blob).then(function(entries) {
-				let dirs = getDirs(entries);
-				let manifest = [];
-				
-				// Function that filters any unwanted files. In this case, filter anything that isn't a folder.
-				let isAllowed = function(filename) {
-					let regexString = "";
-					let allowedFiles;
+				// Get the Addons folder, if it isn't set, set it so that we are allowed to write to it.
+				AddonsFolder().then(function(storedDir) {
+					let dirList = getDirs(entries);
+					let dirs = entries.filter(entry => entry.directory);
+					let files = entries.filter(entry => !entry.directory);
 
-					for(let i=0; i < dirs.length; i++) {
-						regexString += dirs[i] + '\/|';
-					}
-					allowedFiles = new RegExp(regexString.slice(0, -1), 'i');
-
-					return filename.match(allowedFiles);
-				};
-
-				// Get the WTF folder, if it isn't set, set it so that we are allowed to write to it.
-				WTFFolder().then(function(storedDir) {
-					// Loop through all files.
-					for(let i=0; i < entries.length; i++) {
-						let entry = entries[i];
-						if(isAllowed(entry.filename)) {
-							let filename = entry.filename.replace(/[^\/]*?\//i, "");
-							manifest.push(filename);
-							// Get file Blob and write it.
-							FileHandler.read.data(entry).then(function(blob) {
-								FileHandler.write(blob, filename, storedDir).then(function(name) {
-									manifest.splice(manifest.indexOf(name), 1);	// Remove file from manifest
-									if(manifest.length == 0) {
-										console.log("Finished writing files.");
-										resolve();	// If we have no more files left to write, resolve
-									}
-								});
-							});
-						}
-					}
+					// Remove folders, then create new ones and finally create the files.
+					FileHandler.remove(dirList, storedDir).then(function() {
+						writeFiles(dirs, storedDir).then(function() {
+							writeFiles(files, storedDir).then(resolve);
+						});
+					});
 				});
 				// console.log(dirs, entries);
 			});

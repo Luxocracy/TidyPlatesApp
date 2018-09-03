@@ -311,7 +311,8 @@ fieldset {
     color: #7d7d7d;
 }
 
-button {
+button,
+.button {
     display: block;
     cursor: pointer;
     padding: .5em 1em;
@@ -328,24 +329,34 @@ button {
     margin-right: auto;
 }
 
-button:hover {
+button:hover,
+.button:hover {
     background-color: #1e88e5;
 }
 
 button:active,
 button.active,
-.active button {
+.active button,
+.button:active,
+.button.active,
+.active .button {
     background: #f58500;
     top: 2px;
 }
 
-button i {
+button i,
+.button i {
     margin-right: 0.4em;
     margin-left: -0.3em;
 }
 
-button i.fa-bars {
+button i.fa-bars,
+.button i.fa-bars {
     margin: 0;
+}
+
+.button {
+    text-align: center;
 }
 
 ::-webkit-scrollbar {
