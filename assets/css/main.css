@@ -313,7 +313,8 @@ fieldset {
 
 button,
 .button {
-    display: block;
+    display: flex;
+    height: 30px;
     cursor: pointer;
     padding: .5em 1em;
     margin-left: 0;
@@ -356,6 +357,8 @@ button i.fa-bars,
 }
 
 .button {
+    display: block;
+    height: inherit;
     text-align: center;
 }
 

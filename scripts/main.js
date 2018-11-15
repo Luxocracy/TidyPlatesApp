@@ -754,6 +754,7 @@ var extractRelease = function(release) {
 					let dirList = getDirs(entries);
 					let dirs = entries.filter(entry => entry.directory);
 					let files = entries.filter(entry => !entry.directory);
+					files = files.filter(entry => (entry.filename.match(/.*?\/.*?\//)));	// Remove top-level loose files
 
 					// Remove folders, then create new ones and finally create the files.
 					FileHandler.remove(dirList, storedDir).then(function() {
